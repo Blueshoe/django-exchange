@@ -27,7 +27,7 @@ CLASSIFIERS = [
 
 REQUIREMENTS = [
     'django>=1.11',
-    'exchangelib>=2.0.1',
+    'exchangelib>=5.5.0',
 ]
 
 setup(
