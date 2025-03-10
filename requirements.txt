@@ -1,5 +1,5 @@
 Django>=1.8
-exchangelib>=2.0.1
+exchangelib>=5.5.0
 flake8
 pytest>=5.2.0
 coverage>=4.5.4
