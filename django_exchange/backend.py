@@ -14,7 +14,13 @@ class ExchangeEmailBackend(BaseEmailBackend):
         self.port = port or settings.EMAIL_PORT
         self.username = settings.EMAIL_HOST_USER if username is None else username
         self.password = settings.EMAIL_HOST_PASSWORD if password is None else password
-        self.domain = settings.EMAIL_DOMAIN if domain is None else domain
+        if domain:
+            self.domain = domain
+        else:
+            try:
+                self.domain = settings.EMAIL_DOMAIN
+            except AttributeError:
+                self.domain = None
         self.credentials = None
         self._lock = threading.RLock()
 
@@ -27,7 +33,8 @@ class ExchangeEmailBackend(BaseEmailBackend):
             return False
 
         try:
-            self.credentials = Credentials(username=f'{self.domain}\\{self.username}', password=self.password)
+            username_prefix = f'{self.domain}\\' if self.domain else ''
+            self.credentials = Credentials(username=f'{username_prefix}{self.username}', password=self.password)
             return True
         except Exception:
             if not self.fail_silently:
