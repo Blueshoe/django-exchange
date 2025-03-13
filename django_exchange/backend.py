@@ -1,3 +1,4 @@
+from email.utils import parseaddr
 import threading
 
 from django.conf import settings
@@ -74,12 +75,19 @@ class ExchangeEmailBackend(BaseEmailBackend):
             return False
         encoding = email_message.encoding or settings.DEFAULT_CHARSET
         from_email = sanitize_address(email_message.from_email, encoding)
+        # from_email could be a formatted email string, e.g. "FOO <foo@bar.com>"
+        _, from_email_address = parseaddr(from_email)
+
         recipients = [sanitize_address(addr, encoding) for addr in email_message.recipients()]
         try:
-            account = Account(primary_smtp_address=from_email, credentials=self.credentials, autodiscover=True,
-                              access_type=DELEGATE)
-            exchange_message = Message(account=account, subject=email_message.subject, body=email_message.body,
-                                       to_recipients=[Mailbox(email_address=recipient) for recipient in recipients])
+            account = Account(
+                primary_smtp_address=from_email_address, credentials=self.credentials, autodiscover=True,
+                access_type=DELEGATE
+            )
+            exchange_message = Message(
+                account=account, subject=email_message.subject, body=email_message.body,
+                to_recipients=[Mailbox(email_address=recipient) for recipient in recipients]
+            )
             exchange_message.send()
         except Exception:
             if not self.fail_silently:
