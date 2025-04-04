@@ -5,7 +5,7 @@ from django.conf import settings
 from django.core.mail.backends.base import BaseEmailBackend
 from django.core.mail.message import sanitize_address
 
-from exchangelib import DELEGATE, Account, Credentials, Message, Mailbox
+from exchangelib import DELEGATE, Account, Credentials, Message, Mailbox,FileAttachment
 
 
 class ExchangeEmailBackend(BaseEmailBackend):
@@ -88,6 +88,17 @@ class ExchangeEmailBackend(BaseEmailBackend):
                 account=account, subject=email_message.subject, body=email_message.body,
                 to_recipients=[Mailbox(email_address=recipient) for recipient in recipients]
             )
+            # Convert Django attachments to Exchange FileAttachments
+            exch_attachments = []
+            for attachment in email_message.attachments:
+                if isinstance(attachment, tuple) and len(attachment) == 3:
+                    filename, content, mimetype = attachment
+                    if isinstance(content, str):
+                        content = content.encode(encoding)
+                    exch_attachments.append(FileAttachment(name=filename, content=content))
+
+            if exch_attachments:
+                exchange_message.attachments = exch_attachments
             exchange_message.send()
         except Exception:
             if not self.fail_silently:
